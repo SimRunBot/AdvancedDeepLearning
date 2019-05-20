@@ -24,8 +24,6 @@ filtersizes = [256, 128]
 latentsize = 128
 batchsize = 256
 epoch = 20
-padding = "same"
-activation = "relut"
 
 # Autoencoder
 # input shape: ( 28, 28, 1)
@@ -37,8 +35,8 @@ x = input_img
 x = Conv2D(filters=filtersizes[0],
            kernel_size=(3,3),
            strides=(2, 2),
-           padding=padding,
-           activation=activation,
+           padding="same",
+           activation="relu",
            use_bias=True,
            kernel_initializer='random_normal',
            bias_initializer='random_normal'
@@ -46,8 +44,8 @@ x = Conv2D(filters=filtersizes[0],
 x = Conv2D(filters=filtersizes[1],
            kernel_size=(3,3),
            strides=(2, 2),
-           padding=padding,
-           activation=activation,
+           padding="same",
+           activation="relu",
            use_bias=True,
            kernel_initializer='random_normal',
            bias_initializer='random_normal'
@@ -55,8 +53,7 @@ x = Conv2D(filters=filtersizes[1],
 
 shape = K.int_shape(x)
 
-
-latent_vector = Dense(latentsize, activation=activation,
+latent_vector = Dense(latentsize, activation="relu",
            use_bias=True,
            kernel_initializer='random_normal',
            bias_initializer='random_normal'
@@ -64,32 +61,12 @@ latent_vector = Dense(latentsize, activation=activation,
 
 # Decoder
 
-# ## using transpose convolution lead to checkerboard artifacts as results
-# x = Conv2DTranspose(filters=filtersizes[0],
-#            kernel_size=(3,3),
-#            strides=(2, 2),
-#            padding="same",
-#            activation="relu",
-#            use_bias=True,
-#            kernel_initializer='random_normal',
-#            bias_initializer='random_normal'
-#            )(latent_vector)
-# x = Conv2DTranspose(filters=filtersizes[1],
-#            kernel_size=(3,3),
-#            strides=(2, 2),
-#            padding="same",
-#            activation="relu",
-#            use_bias=True,
-#            kernel_initializer='random_normal',
-#            bias_initializer='random_normal'
-#            )(x)
 
-# instead: nearest neighbour upsampling layers
 x = UpSampling2D((2,2))(latent_vector)
 x = Conv2D(filters=filtersizes[0],
            kernel_size=(3,3),
-           padding=padding,
-           activation=activation,
+           padding="same",
+           activation="relu",
            use_bias=True,
            kernel_initializer='random_normal',
            bias_initializer='random_normal'
@@ -97,12 +74,13 @@ x = Conv2D(filters=filtersizes[0],
 x = UpSampling2D((2,2))(x)
 output_img = Conv2D(1,
            kernel_size=(3,3),
-           padding=padding,
-           activation=activation,
+           padding="same",
+           activation="relu",
            use_bias=True,
            kernel_initializer='random_normal',
            bias_initializer='random_normal'
            )(x)
+
 
 
 autoencoder = Model(input_img, output_img)
@@ -119,11 +97,15 @@ autoencoder.save('autoencoder.h5')
 # Prediction
 reconstructed = autoencoder.predict(x_test)
 
+
 # Plotting
-plt.figure(figsize=(40, 4))
+plt.figure(figsize=(20, 4))
+plt.suptitle(loss_function + " loss", fontsize=16,x=0.2, y=1)
 for i in range(10):
     # original images
     ax = plt.subplot(3, 20, i + 1)
+    ax.set_title("original")
+    
     plt.imshow(x_test[i].reshape(28, 28))
     plt.gray()
     ax.get_xaxis().set_visible(False)
@@ -131,11 +113,12 @@ for i in range(10):
 
     # reconstructed images
     ax = plt.subplot(3, 20, 2*20 +i+ 1)
+    ax.set_title("decoded")
     plt.imshow(reconstructed[i].reshape(28, 28))
     plt.gray()
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
 
 
-plt.show()
+
 plt.savefig('autoencoder_'+ loss_function +'.png')
